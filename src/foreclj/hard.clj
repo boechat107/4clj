@@ -48,3 +48,37 @@
       ;; chain. So, a valid sequence can have at most two of these words. 
       (reduce +)
       (>= 2))))
+
+;; ===================================================
+;; Problem #130
+;; ===================================================
+
+(defn prewalk [[node & children]]
+  (if-not node
+    nil
+    (do (println node)
+        (doall (map prewalk children))
+        nil)))
+
+(defn move-down [cur-tree new-parent-node uptree]
+  (letfn [(f [[n & chs :as t]]
+            (cond
+              (nil? n) (throw (Exception. "Some problem"))
+              (= n new-parent-node) (concat t [cur-tree])
+              :else (conj (map f chs) n)))]
+    (f uptree)))
+
+(defn tree-reparenting
+  [new-root tree]
+  (letfn [(prewalk [[node & children :as tree]]
+            (cond 
+              (nil? node) nil
+              (= node new-root) [node tree]
+              :else 
+              (let [walks (seq (map prewalk children))
+                    reg-children (remove vector? walks)
+                    [n t] (first (filter vector? walks))]
+                (if-not n
+                  tree
+                  [node (move-down (list* node reg-children) n t)]))))]
+    (second (prewalk tree))))
