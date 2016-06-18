@@ -9,6 +9,7 @@ to contribute to some solution.
 ## Problems solved
 
 * Problem 82: [Word Chains](https://www.4clojure.com/problem/82)
+* Problem 130: [Tree reparenting](https://www.4clojure.com/problem/130)
 
 ## Usage
 
