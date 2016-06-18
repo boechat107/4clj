@@ -51,34 +51,53 @@
 
 ;; ===================================================
 ;; Problem #130
+;;
+;; It took me a whole afternoon...
 ;; ===================================================
-
-(defn prewalk [[node & children]]
-  (if-not node
-    nil
-    (do (println node)
-        (doall (map prewalk children))
-        nil)))
-
-(defn move-down [cur-tree new-parent-node uptree]
-  (letfn [(f [[n & chs :as t]]
-            (cond
-              (nil? n) (throw (Exception. "Some problem"))
-              (= n new-parent-node) (concat t [cur-tree])
-              :else (conj (map f chs) n)))]
-    (f uptree)))
 
 (defn tree-reparenting
   [new-root tree]
   (letfn [(prewalk [[node & children :as tree]]
-            (cond 
-              (nil? node) nil
-              (= node new-root) [node tree]
-              :else 
-              (let [walks (seq (map prewalk children))
-                    reg-children (remove vector? walks)
+            ;; A recursive function to transverse the tree and return an original
+            ;; subtree or a modified one (if the new root is in it).
+            ;; NOTE: a breadth first search, instead of this depth first search,
+            ;; could be a better solution.
+            (if (= node new-root)
+              ;; The current node (and possible root of a subtree) is the target
+              ;; node. Here we return the original root of this possible subtree (in
+              ;; this case, this subtree is the same as the original.
+              [node tree]
+              ;; We can have normal leaves, original subtrees or modified subtrees.
+              (let [walks (seq (map prewalk children)) ; recursive call
+                    ;; The results of these walks can be three possibilities:
+                    ;; nil ('node' is a leaf), a tree (a normal list of nodes)
+                    ;; or a vector [original-root-node-of modified-subtree].
+                    reg-children (remove vector? walks) ; regular children (original subtrees).
+                    ;; Modified subtree. 'n' the original root of the modified
+                    ;; subtree 't'.
                     [n t] (first (filter vector? walks))]
                 (if-not n
+                  ;; If we don't have any modified child, we can just return
+                  ;; this original subtree.
                   tree
-                  [node (move-down (list* node reg-children) n t)]))))]
+                  ;; If we have modified child, we need to "move down" 'node'
+                  ;; and its unmodified children as a child of 'n' and return
+                  ;; the original root of this subtree and the new (modified)
+                  ;; subtree.
+                  ;; We need to search for it in the modified
+                  ;; subtree.
+                  [node (move-down (list* node reg-children) n t)]))))
+          (move-down [cur-tree new-parent-node uptree]
+            ;; Moves the tree 'cur-tree' to a leaf of 'new-parent-node', which is
+            ;; somewhere inside the 'uptree'.
+            (letfn [(f [[n & chs :as t]]
+                      ;; Recursive function that works in a very similar way as
+                      ;; 'prewalk'.
+                      (if (= n new-parent-node)
+                        ;; We found the new root of 'cur-tree'. We need to put at the
+                        ;; rightest place.
+                        (concat t [cur-tree])
+                        ;; We just return the tree as we found it.
+                        (conj (map f chs) n)))]
+              (f uptree)))]
     (second (prewalk tree))))
